@@ -1,0 +1,2 @@
+communication
+-DCATKIN_DEVEL_PREFIX=/home/dtrobot/robot/devel -DCMAKE_INSTALL_PREFIX=/home/dtrobot/robot/install -G Unix Makefiles

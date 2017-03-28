@@ -1,0 +1,17 @@
+/home/dtrobot/robot/build/CMakeFiles/clean_test_results.dir
+/home/dtrobot/robot/build/CMakeFiles/download_extra_data.dir
+/home/dtrobot/robot/build/CMakeFiles/doxygen.dir
+/home/dtrobot/robot/build/gtest/CMakeFiles/gtest.dir
+/home/dtrobot/robot/build/gtest/CMakeFiles/gtest_main.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/roscpp_generate_messages_cpp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/roscpp_generate_messages_lisp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/roscpp_generate_messages_py.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/rosgraph_msgs_generate_messages_cpp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/rosgraph_msgs_generate_messages_lisp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/rosgraph_msgs_generate_messages_py.dir
+/home/dtrobot/robot/build/CMakeFiles/run_tests.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/std_msgs_generate_messages_cpp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/std_msgs_generate_messages_lisp.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/std_msgs_generate_messages_py.dir
+/home/dtrobot/robot/build/communication/CMakeFiles/test_node.dir
+/home/dtrobot/robot/build/CMakeFiles/tests.dir
