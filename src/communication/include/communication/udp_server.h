@@ -34,6 +34,7 @@ class UDP_Server
 	int timer();
 	void close_ser();
 	void callback();
+	unsigned char getCrc(string values);
 	
 	private:
 	int sockfd;
@@ -46,6 +47,8 @@ class UDP_Server
 	public:
 	int cmd_lenth;
 	string type;
+	string data_in;
+	string data_out;
 	
 	int time;
 	ros::Subscriber sub_state;

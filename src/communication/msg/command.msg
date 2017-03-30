@@ -1,3 +1,6 @@
 string type
-int16 command_lenth
+int32 command_lenth
+bool  break_flag
+bool  wrong_flag
+string data
 
