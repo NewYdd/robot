@@ -31,6 +31,7 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
     sendBuf=send;
     recBuf=rec;
     //sub_state=n.subscribe("/state",1,&UDP_Server::callback,this);
+    pub_command=n.advertise<communication::command>("comm/cmd",10);
 }
 
 void UDP_Server::callback()
@@ -38,7 +39,55 @@ void UDP_Server::callback()
 	// update the state;
 }
 
-bool UDP_Server::receive(int max)
+void UDP_Server::wait(int maxsize,int time)
+{
+	fd_set fds;
+	timeval timeout={20,0};
+	int net;
+	
+	while(1)
+	{
+		FD_ZERO(&fds);
+		FD_SET(sockfd,&fds);
+		net=0;
+		net=select(sockfd+1,&fds,NULL,NULL,&timeout);
+		printf("net %d\n",net);
+		if(net<0)
+		{
+			exit(-1);
+		}
+		else if(net==0) 
+		{
+			printf("timeout");
+			pub_msg.wrong_flag=true;
+			pub_msg.break_flag=false;
+			pub_command.publish(pub_msg);	
+			break;
+		}
+				
+		 else
+		 {	if(FD_ISSET(sockfd,&fds))
+				{
+					receive(maxsize);
+					pub_msg.type=type;
+					pub_msg.command_lenth=cmd_lenth;
+					pub_msg.data=data_in;
+					pub_msg.break_flag=false;
+					pub_msg.wrong_flag=false;
+					
+					pub_command.publish(pub_msg);
+					
+				}
+				
+		 }
+	
+	}
+
+
+	printf("\ncommunication finished\n");
+}
+
+void UDP_Server::receive(int max)
 {
 	socklen_t addrlen;
 	addrlen=sizeof(server);	
@@ -51,9 +100,10 @@ bool UDP_Server::receive(int max)
   	{
   		printf("Received a string from client %s, string is: %s\n", 
 				inet_ntoa(server.sin_addr), recBuf);
-		return true;
+		process();
+		
 	}	
-	else return false;
+	
 }
 
 void UDP_Server::process()
@@ -118,19 +168,18 @@ void UDP_Server::process()
 			if(t==0x50)
 			{
 				printf("ask\n");
+				out+=rec;
 				out+=data_out;
 				check_out=getCrc(out);// update crc
 				
 			}
 			else if(t==0x00)
 			{
-				time=0; 
 				out+=rec;
 				check_out=getCrc(out);// update crc
 				//open timer
 				if(timer_Flag)//if the timer has been opened ,clear the timer
 				{
-					time=0;
 				}
 				else 
 				{	// open the timer
@@ -155,7 +204,6 @@ void UDP_Server::process()
 		
 	out+=check_out;
 	out+=tail;
-   
     //sendBack	
 	sendBuf=(char *)out.c_str(); 
 	sendto(sockfd,sendBuf, sizeof(sendBuf), 0, (struct sockaddr *)&server, addrlen);
@@ -206,14 +254,11 @@ unsigned char UDP_Server::getCrc(string values)
 }
 
 
+
 void UDP_Server::close_ser()
 {
 	close(sockfd);  
 	
 }
 
-int UDP_Server::timer()
-{
-
-}
 

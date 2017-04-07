@@ -16,6 +16,8 @@
 #include <string>
 #include <iostream>
 #include <ros/ros.h>
+#include <communication/command.h>
+#include <sys/select.h>
 using namespace std;
 
 class UDP_Server
@@ -30,11 +32,12 @@ class UDP_Server
 	*/
 	void init(int port,char *send,char *rec,ros::NodeHandle &n);
 	void process();
-	bool receive(int max);
-	int timer();
+	void receive(int max);
+
 	void close_ser();
 	void callback();
 	unsigned char getCrc(string values);
+	void wait(int maxsize,int time);
 	
 	private:
 	int sockfd;
@@ -50,8 +53,9 @@ class UDP_Server
 	string data_in;
 	string data_out;
 	
-	int time;
+	communication::command pub_msg;
 	ros::Subscriber sub_state;
+	ros::Publisher pub_command;
 	
 };
 
