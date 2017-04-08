@@ -1,37 +1,40 @@
 #include <communication/udp_server.h>
 
-UDP_Server::UDP_Server(bool timer_Flag):timer_Flag(timer_Flag)
-{}
+
 
 bool UDP_Server::open()
 {
-	 if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
-    {
-       perror("Creatingsocket failed.");
-       // exit(1);
-       return false;
-    }
+ 	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
+    	{
+       		perror("Creatingsocket failed.");
+       		// exit(1);
+       		return false;
+    	}
 	else
+	{
 		printf("open ok\n");
 		return true;
+	}
 }
 
 void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 {
-	bzero(&server,sizeof(server));  
-    server.sin_family=AF_INET;		
-    server.sin_port=htons(port);	
-    server.sin_addr.s_addr= htonl (INADDR_ANY);
-    if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1)
-    {
-       perror("Bind()error.");
-      // exit(1);
-    }   
-    fcntl(sockfd,F_SETFL,O_NONBLOCK);
-    sendBuf=send;
-    recBuf=rec;
-    //sub_state=n.subscribe("/state",1,&UDP_Server::callback,this);
-    pub_command=n.advertise<communication::command>("comm/cmd",10);
+	broken=false;
+   	connect=false;
+   	 bzero(&server,sizeof(server));  
+    	server.sin_family=AF_INET;		
+    	server.sin_port=htons(port);	
+    	server.sin_addr.s_addr= htonl (INADDR_ANY);
+	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1)
+	{
+	       perror("Bind()error.");
+	      // exit(1);  
+	  }   
+	fcntl(sockfd,F_SETFL,O_NONBLOCK);
+	sendBuf=send;
+	recBuf=rec;
+	    //sub_state=n.subscribe("/state",1,&UDP_Server::callback,this);
+	pub_command=n.advertise<communication::command>("comm/cmd",10);
 }
 
 void UDP_Server::callback()
@@ -39,12 +42,12 @@ void UDP_Server::callback()
 	// update the state;
 }
 
-void UDP_Server::wait(int maxsize,int time)
+void UDP_Server::wait_command(int maxsize,int time)
 {
 	fd_set fds;
-	timeval timeout={20,0};
+	timeval timeout={time,0};
 	int net;
-	
+	connect=true;
 	while(1)
 	{
 		FD_ZERO(&fds);
@@ -61,7 +64,8 @@ void UDP_Server::wait(int maxsize,int time)
 			printf("timeout");
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=false;
-			pub_command.publish(pub_msg);	
+			pub_command.publish(pub_msg);
+			connect=false;	
 			break;
 		}
 				
@@ -82,10 +86,56 @@ void UDP_Server::wait(int maxsize,int time)
 		 }
 	
 	}
-
-
-	printf("\ncommunication finished\n");
+	printf("\ncommunication errro\n");
 }
+void UDP_Server::wait_connect(int maxsize,int time)
+{
+	fd_set fds;
+	timeval timeout={time,0};
+	int net;
+	printf("connecting\n");
+	while(!connect)
+	{
+		FD_ZERO(&fds);
+		FD_SET(sockfd,&fds);
+		net=0;
+		net=select(sockfd+1,&fds,NULL,NULL,&timeout);
+		printf("net %d\n",net);
+		if(net<0)
+		{
+			exit(-1);
+		}
+		else if(net==0) 
+		{
+			printf("timeout");
+			pub_msg.wrong_flag=true;
+			pub_msg.break_flag=true;
+			pub_command.publish(pub_msg);
+			broken=true;
+			break;
+		}
+				
+		 else
+		 {	if(FD_ISSET(sockfd,&fds))
+				{
+					receive(maxsize);
+					if(connect)
+						printf("connect\n");
+					pub_msg.type=type;
+					pub_msg.command_lenth=cmd_lenth;
+					pub_msg.data=data_in;
+					pub_msg.break_flag=false;
+					pub_msg.wrong_flag=!connect;
+					pub_command.publish(pub_msg);
+					
+				}
+				
+		 }
+	
+	}
+	printf("\ncommunication failed\n");
+}
+
 
 void UDP_Server::receive(int max)
 {
@@ -108,7 +158,7 @@ void UDP_Server::receive(int max)
 
 void UDP_Server::process()
 {
-	printf("data process\n");
+	printf("receive command\n");
 	bzero(sendBuf, sizeof(sendBuf));
 
 	int len=strlen(recBuf);
@@ -145,7 +195,7 @@ void UDP_Server::process()
 	unsigned char tail=*p;
 	
 	unsigned char check_out;
-	unsigned char rec=0x01;
+	unsigned char rec=0x01; //receive normal
 	
 	out+=head;
 	out+=order;
@@ -170,23 +220,19 @@ void UDP_Server::process()
 				printf("ask\n");
 				out+=rec;
 				out+=data_out;
-				check_out=getCrc(out);// update crc
-				
+				check_out=getCrc(out);// update crc		
 			}
 			else if(t==0x00)
 			{
+				printf("connect\n");
 				out+=rec;
-				check_out=getCrc(out);// update crc
-				//open timer
-				if(timer_Flag)//if the timer has been opened ,clear the timer
-				{
-				}
-				else 
-				{	// open the timer
-				}
+				check_out=getCrc(out);
+				connect=true;
 			}
-			else { out+=rec;check_out=getCrc(out);}// update crc
-		
+			else 
+			{ 	out+=rec;
+				check_out=getCrc(out);
+			}// update crc
 		}
 		else// check failed ,return receive error
 		{	
