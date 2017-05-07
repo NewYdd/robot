@@ -10,7 +10,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#define	UDP_TEST_PORT		5001
+#define	UDP_TEST_PORT		8001
 #define UDP_SERVER_IP 		"192.168.60.169"
 
 int main(int argC, char* arg[])
@@ -38,13 +38,26 @@ int main(int argC, char* arg[])
 	buffer[6]=0x00;buffer[7]=0x02;
 	buffer[8]=0x00;
 	buffer[9]=0x01;
-	buffer[10]=0x00;
+	buffer[10]=0x0A;
 	buffer[11]=0xFF;
 	len=12;
+	int i=0;
 	while(1) {
 		sendto(sockfd, buffer, len, 0, (struct sockaddr *)&addr, addr_len);
+		i++;
+		if(i%10==0)
+		{
+			
+			buffer[8]+=1;
+			if(i%30==0)
+			{
+				i=0;
+				buffer[8]=0x00;
+			}
+		}
 		sleep(2); /*睡眠2秒*/
-		printf("%s\n",buffer);
+		printf("%d %s\n",i,buffer);
+
 	}
 
 	return 0;

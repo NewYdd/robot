@@ -202,7 +202,7 @@ void UDP_Server::process()
 	out+=ID;
 	char len_out[2];
 	len_out[0]=0x00;
-	len_out[1]=0x02;
+	len_out[1]=0x02; // default sendback message lenth
 			
 	if(tail==0xFF)
 	{

@@ -39,7 +39,56 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 
 void UDP_Server::callback()
 {
-	// update the state;
+	// update the state;,data_out
+}
+
+void UDP_Server::wait_connect(int maxsize,int time)
+{
+	fd_set fds;
+	timeval timeout={time,0};
+	int net;
+	
+	while(!connect)
+	{
+		timeout.tv_sec=time;
+	             timeout.tv_usec=0;
+		cout<<endl;
+		printf("connecting\n");
+		FD_ZERO(&fds);
+		FD_SET(sockfd,&fds);
+		net=0;
+		net=select(sockfd+1,&fds,NULL,NULL,&timeout);
+	
+		if(net<0)
+		{
+			exit(-1);
+		}
+		else if(net==0) 
+		{
+			printf("timeout\n");
+
+		}
+				
+		 else
+		 {	if(FD_ISSET(sockfd,&fds))
+				{
+					receive(maxsize);
+					if(connect)
+					{
+						printf("construct connect\n");
+						pub_msg.type=type;
+						pub_msg.command_lenth=cmd_lenth;
+						pub_msg.data=data_in;
+						pub_msg.break_flag=false;
+						pub_msg.wrong_flag=!connect;
+						pub_command.publish(pub_msg);
+					}
+				}
+				
+		 }
+	
+	}
+	
 }
 
 void UDP_Server::wait_command(int maxsize,int time)
@@ -48,20 +97,26 @@ void UDP_Server::wait_command(int maxsize,int time)
 	timeval timeout={time,0};
 	int net;
 	connect=true;
+	
 	while(1)
 	{
+		cout<<endl;
+		printf("connected\n");
+	             timeout.tv_sec=time;
+	             timeout.tv_usec=0;
+
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
 		net=0;
 		net=select(sockfd+1,&fds,NULL,NULL,&timeout);
-		printf("net %d\n",net);
+		
 		if(net<0)
 		{
 			exit(-1);
 		}
 		else if(net==0) 
 		{
-			printf("timeout");
+			printf("timeout\n");
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=false;
 			pub_command.publish(pub_msg);
@@ -86,28 +141,31 @@ void UDP_Server::wait_command(int maxsize,int time)
 		 }
 	
 	}
-	printf("\ncommunication errro\n");
 }
-void UDP_Server::wait_connect(int maxsize,int time)
+void UDP_Server::wait_reconnect(int maxsize,int time)
 {
 	fd_set fds;
 	timeval timeout={time,0};
 	int net;
-	printf("connecting\n");
+	
 	while(!connect)
 	{
+		cout<<endl;
+		timeout.tv_sec=time;
+	             timeout.tv_usec=0;
+		printf("connecting\n");
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
 		net=0;
 		net=select(sockfd+1,&fds,NULL,NULL,&timeout);
-		printf("net %d\n",net);
+	
 		if(net<0)
 		{
 			exit(-1);
 		}
 		else if(net==0) 
 		{
-			printf("timeout");
+			printf("timeout\n");
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=true;
 			pub_command.publish(pub_msg);
@@ -119,21 +177,19 @@ void UDP_Server::wait_connect(int maxsize,int time)
 		 {	if(FD_ISSET(sockfd,&fds))
 				{
 					receive(maxsize);
-					if(connect)
-						printf("connect\n");
 					pub_msg.type=type;
 					pub_msg.command_lenth=cmd_lenth;
 					pub_msg.data=data_in;
 					pub_msg.break_flag=false;
 					pub_msg.wrong_flag=!connect;
 					pub_command.publish(pub_msg);
-					
+
 				}
 				
 		 }
 	
 	}
-	printf("\ncommunication failed\n");
+	
 }
 
 
@@ -148,8 +204,6 @@ void UDP_Server::receive(int max)
 	num =recvfrom(sockfd,recBuf,max,0,(struct sockaddr*)&server,&addrlen); 
   	if(num>0)
   	{
-  		printf("Received a string from client %s, string is: %s\n", 
-				inet_ntoa(server.sin_addr), recBuf);
 		process();
 		
 	}	
@@ -158,7 +212,7 @@ void UDP_Server::receive(int max)
 
 void UDP_Server::process()
 {
-	printf("receive command\n");
+
 	bzero(sendBuf, sizeof(sendBuf));
 
 	int len=strlen(recBuf);
@@ -166,7 +220,7 @@ void UDP_Server::process()
 	addrlen=sizeof(server);	
 	
 	char *p=recBuf;
-	string out;
+	string out="";
 	
 	unsigned char head=*p++;
 	unsigned char order=*p++;
@@ -174,68 +228,94 @@ void UDP_Server::process()
 	string data="";
 	ID+=*p++;ID+=*p++;ID+=*p++;ID+=*p++;
 
-	
-	if(head==0x3F)
-	{
-		printf("head\n");
-	} 
-	
 	// lenth
 	unsigned char lenth[]={0,0};
 	lenth[0]=*p++;
 	lenth[1]=*p++;
-
-	unsigned char t=*p++;
 	
-	for(int i=0;i<cmd_lenth;i++)
+	//for processor
+	cmd_lenth=0;
+	cmd_lenth=(int)lenth[0]*256+(int)lenth[1];
+	
+	unsigned char t=*p++;
+
+	for(int i=0;i<cmd_lenth-1;i++)
 	{
 		data+=*p++;
 	}
 	unsigned char check=*p++;
 	unsigned char tail=*p;
 	
-	unsigned char check_out;
-	unsigned char rec=0x01; //receive normal
+	unsigned char check_out;//crc
+	unsigned char check_in;//crc
+	unsigned char rec=0x01; //receive normal   as data
 	
+	//test 
+	//
+	int a[12]={0};
+
 	out+=head;
 	out+=order;
 	out+=ID;
-	out+=(char *)lenth;
-	out+=t;
-
+	string len_out;
+	len_out[0]=0x00;
+	len_out[1]=0x02;
+		
 	if(tail==0xFF)
 	{
-		check_out=getCrc(data);
-		if(check==check_out)
-		{	cmd_lenth=0;
+		
+		//check_out=getCrc(data);
+		check_in=0x0A;  // **if you want test  ,use this sentence
+		if(check==check_in)
+		{	
 			type="";
 			data_in="";
-			
-			cmd_lenth=(int)lenth[0]*256+(int)lenth[1];
+			// for processor
 			type+=t;
 			data_in=data;	
 			//data
-			if(t==0x50)
+			if(t==0x50)  // ask for state information
 			{
 				printf("ask\n");
+				len_out[0]=0x00;
+				len_out[1]=0x26;
+
+				out=out+len_out[0];
+				out=out+len_out[1];
+
+				out+=t;
 				out+=rec;
 				out+=data_out;
 				check_out=getCrc(out);// update crc		
 			}
 			else if(t==0x00)
 			{
-				printf("connect\n");
+				printf("connect command\n");
+				out=out+len_out[0];
+				out=out+len_out[1];	
+				out+=t;
 				out+=rec;
 				check_out=getCrc(out);
 				connect=true;
 			}
 			else 
-			{ 	out+=rec;
+			{ 
+				printf("AAAAAAAA\n");
+				out=out+len_out[0];
+				out=out+len_out[1];
+
+				out+=t;
+				out+=rec;
 				check_out=getCrc(out);
+				
 			}// update crc
 		}
 		else// check failed ,return receive error
 		{	
+			out=out+len_out[0];
+			out=out+len_out[1];
+
+			out+=t;
 			rec=0x00;
 			out+=rec;
 			check_out=getCrc(out);// update crc
@@ -243,16 +323,38 @@ void UDP_Server::process()
 	}
 	
 	else //the command not compelete 
-	{	rec=0x00;
+	{	
+		out=out+len_out[0];
+		out=out+len_out[1];
+
+		out+=t;
+		rec=0x00;
 		out+=rec;
 		check_out=getCrc(out);// default check_out 
 	}
-		
+	
+	//check_out=0x0A;	
 	out+=check_out;
 	out+=tail;
-    //sendBack	
-	sendBuf=(char *)out.c_str(); 
-	sendto(sockfd,sendBuf, sizeof(sendBuf), 0, (struct sockaddr *)&server, addrlen);
+ 	   for(int i=0;i<12;i++)
+	{
+		a[i]=(int)out[i];
+		cout<<a[i]<<' ' ;
+		
+	}	
+
+    	cout<<out.c_str()<<endl;
+    	//cout<<"out   "<<out;
+	sendBuf=(char *)out.c_str();
+	
+	int out_len=out.size();
+	cout<<"out_len "<<out_len<<endl;
+	
+	if(connect)
+	{
+		printf("sendback\n");
+		sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&server, addrlen);
+	}
 }
 
 unsigned char UDP_Server::getCrc(string values)
@@ -300,11 +402,9 @@ unsigned char UDP_Server::getCrc(string values)
 }
 
 
-
 void UDP_Server::close_ser()
 {
-	close(sockfd);  
-	
+	close(sockfd);  	
 }
 
 

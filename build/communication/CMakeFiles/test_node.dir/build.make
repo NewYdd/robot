@@ -114,10 +114,10 @@ test_node_EXTERNAL_OBJECTS =
 /home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/librosconsole_backend_interface.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /usr/lib/liblog4cxx.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /usr/lib/x86_64-linux-gnu/libboost_regex.so
+/home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/libxmlrpcpp.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/libroscpp_serialization.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/librostime.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /usr/lib/x86_64-linux-gnu/libboost_date_time.so
-/home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/libxmlrpcpp.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /opt/ros/indigo/lib/libcpp_common.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /usr/lib/x86_64-linux-gnu/libboost_system.so
 /home/dtrobot/robot/devel/lib/communication/test_node: /usr/lib/x86_64-linux-gnu/libboost_thread.so

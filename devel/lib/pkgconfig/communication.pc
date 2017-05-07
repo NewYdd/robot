@@ -3,6 +3,6 @@ prefix=/home/dtrobot/robot/devel
 Name: communication
 Description: Description of communication
 Version: 0.0.0
-Cflags: 
+Cflags: -I/home/dtrobot/robot/devel/include
 Libs: -L/home/dtrobot/robot/devel/lib 
 Requires: 

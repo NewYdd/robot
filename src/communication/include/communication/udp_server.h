@@ -24,7 +24,6 @@ class UDP_Server
 {
 
 	public:
-	UDP_Server(bool timer=false);
 	//open udp
 	bool open();
 	/* initial the socket server;
@@ -37,15 +36,17 @@ class UDP_Server
 	void close_ser();
 	void callback();
 	unsigned char getCrc(string values);
-	void wait(int maxsize,int time);
-	
+	void wait_command(int maxsize,int time);
+	void wait_connect(int maxsize,int time);
+	void wait_reconnect(int maxsize,int time);
+
 	private:
 	int sockfd;
 	char *sendBuf;	
 	char *recBuf;
 	struct sockaddr_in server;
-	struct sockaddr_in 	client;
-	bool timer_Flag;
+
+
 	
 	public:
 	int cmd_lenth;
@@ -56,6 +57,8 @@ class UDP_Server
 	communication::command pub_msg;
 	ros::Subscriber sub_state;
 	ros::Publisher pub_command;
+	bool connect;
+	bool broken;
 	
 };
 
