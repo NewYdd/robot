@@ -35,20 +35,26 @@ int main(int argC, char* arg[])
 	buffer[1]=0x00;
 	buffer[2]=0x21;buffer[3]=0x21;buffer[4]=0x21;buffer[5]=0x21;
 
-	buffer[6]=0x00;buffer[7]=0x02;
+	buffer[6]=0x00;buffer[7]=0x05;
 	buffer[8]=0x00;
-	buffer[9]=0x01;
-	buffer[10]=0x0A;
-	buffer[11]=0xFF;
-	len=12;
+	//buffer[9]=0x01;
+	buffer[9]=0x60;  //abcd
+	buffer[10]=0x61;
+	buffer[11]=0x62;
+	buffer[12]=0x63;
+
+
+	buffer[13]=0x0A;
+	buffer[14]=0xFF;
+	len=16;
 	int i=0;
 	while(1) {
 		sendto(sockfd, buffer, len, 0, (struct sockaddr *)&addr, addr_len);
 		i++;
-		if(i%10==0)
+		if(i%5==0)
 		{
 			
-			buffer[8]+=1;
+			buffer[8]=0x21;
 			if(i%30==0)
 			{
 				i=0;

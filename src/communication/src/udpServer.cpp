@@ -1,5 +1,6 @@
 #include <communication/udp_server.h>
-
+#define  connect_cmd 0x00
+#define  ask_cmd      0x50  
 
 
 bool UDP_Server::open()
@@ -34,7 +35,7 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 	sendBuf=send;
 	recBuf=rec;
 	    //sub_state=n.subscribe("/state",1,&UDP_Server::callback,this);
-	pub_command=n.advertise<communication::command>("comm/cmd",10);
+	pub_command=n.advertise<communication::command>("communication/cmd",10);
 }
 
 void UDP_Server::callback()
@@ -237,12 +238,14 @@ void UDP_Server::process()
 	cmd_lenth=0;
 	cmd_lenth=(int)lenth[0]*256+(int)lenth[1];
 	
+
 	unsigned char t=*p++;
 
 	for(int i=0;i<cmd_lenth-1;i++)
 	{
 		data+=*p++;
 	}
+	printf("data %s\n",data.c_str() );
 	unsigned char check=*p++;
 	unsigned char tail=*p;
 	
@@ -272,9 +275,10 @@ void UDP_Server::process()
 			data_in="";
 			// for processor
 			type+=t;
+			ROS_INFO("%s", type.c_str());
 			data_in=data;	
 			//data
-			if(t==0x50)  // ask for state information
+			if(t==ask_cmd)  // ask for state information
 			{
 				printf("ask\n");
 				len_out[0]=0x00;
@@ -288,7 +292,7 @@ void UDP_Server::process()
 				out+=data_out;
 				check_out=getCrc(out);// update crc		
 			}
-			else if(t==0x00)
+			else if(t==connect_cmd)
 			{
 				printf("connect command\n");
 				out=out+len_out[0];
