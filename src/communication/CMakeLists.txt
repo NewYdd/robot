@@ -54,11 +54,11 @@ find_package(catkin REQUIRED COMPONENTS
  )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
+add_service_files(
+   FILES
+   sendCmd.srv
 #   Service2.srv
-# )
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -135,6 +135,8 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(test_node src/test.cpp src/udpServer.cpp)
+add_executable(client_node src/toPLC.cpp src/test_plc.cpp)
+add_executable(fake_node  src/fakeProcess.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -150,6 +152,14 @@ add_executable(test_node src/test.cpp src/udpServer.cpp)
  target_link_libraries(test_node
    ${catkin_LIBRARIES}
 )
+  target_link_libraries(client_node
+   ${catkin_LIBRARIES}
+)
+
+	target_link_libraries(fake_node
+   ${catkin_LIBRARIES}
+)
+
 
 #############
 ## Install ##
