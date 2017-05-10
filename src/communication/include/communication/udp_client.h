@@ -29,34 +29,30 @@ class UDP_Client
 	/* initial the socket server;
 		parameter: PORT
 	*/
-	void init(int port,string ip);
+	void init(int port,string ip,char *rec);
 	void sendInfo(string type ,string data);
 
-
-	void process();
 	void receive(int max);
-
 	void close_ser();
-	void callback();
+	
 	unsigned char getCrc(string values);
-	void wait_command(int maxsize,int time);
-	void wait_connect(int maxsize,int time);
-	void wait_reconnect(int maxsize,int time);
+	void wait_back(int maxsize,int time);
+
 
 	private:
 	int sockfd;
-	char *sendBuf;	
+
 	char *recBuf;
 	struct sockaddr_in client;
-
+	unsigned char order; //zhen xuhao
 
 	
 	public:
-	int cmd_lenth;
-	string type;
 	string data_in;
-	string data_out;
+	string type;
 	
+	bool receFlag;
+	bool connFlag;
 
 	ros::Publisher pub_command;	
 };

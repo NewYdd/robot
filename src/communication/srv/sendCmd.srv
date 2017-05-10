@@ -3,3 +3,4 @@ string type
 string data
 ---
 bool receive 
+string state

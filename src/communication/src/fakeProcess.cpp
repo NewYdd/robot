@@ -10,15 +10,15 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   ros::ServiceClient client = n.serviceClient<communication::sendCmd>("send_Cmd");
   communication::sendCmd srv;
-  srv.request.type= "uuuuu";
-  srv.request. data= "yyyyyy";
-  if (client.call(srv))
+  srv.request.type= "C";
+  srv.request. data= "D";
+  if (client.call(srv)&&srv.response.receive)
   {
     ROS_INFO("sucess");
   }
   else
   {
-    ROS_ERROR("Failed to call service add_two_ints");
+    ROS_ERROR("Failed ");
     return 1;
   }
 

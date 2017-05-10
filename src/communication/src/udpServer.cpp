@@ -20,9 +20,9 @@ bool UDP_Server::open()
 
 void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 {
-	broken=false;
-   	connect=false;
-   	 bzero(&server,sizeof(server));  
+		broken=false;
+   		connect=false;
+   	 	bzero(&server,sizeof(server));  
     	server.sin_family=AF_INET;		
     	server.sin_port=htons(port);	
     	server.sin_addr.s_addr= htonl (INADDR_ANY);
@@ -52,7 +52,7 @@ void UDP_Server::wait_connect(int maxsize,int time)
 	while(!connect)
 	{
 		timeout.tv_sec=time;
-	             timeout.tv_usec=0;
+		timeout.tv_usec=0;
 		cout<<endl;
 		printf("connecting\n");
 		FD_ZERO(&fds);
@@ -103,8 +103,8 @@ void UDP_Server::wait_command(int maxsize,int time)
 	{
 		cout<<endl;
 		printf("connected\n");
-	             timeout.tv_sec=time;
-	             timeout.tv_usec=0;
+	    timeout.tv_sec=time;
+		timeout.tv_usec=0;
 
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
@@ -153,7 +153,7 @@ void UDP_Server::wait_reconnect(int maxsize,int time)
 	{
 		cout<<endl;
 		timeout.tv_sec=time;
-	             timeout.tv_usec=0;
+	    timeout.tv_usec=0;
 		printf("connecting\n");
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
@@ -281,8 +281,8 @@ void UDP_Server::process()
 			if(t==ask_cmd)  // ask for state information
 			{
 				printf("ask\n");
-				len_out[0]=0x00;
-				len_out[1]=0x26;
+			    len_out[0]=0x00;
+			    len_out[1]=0x26;
 
 				out=out+len_out[0];
 				out=out+len_out[1];
