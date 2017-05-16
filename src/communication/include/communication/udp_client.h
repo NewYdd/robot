@@ -45,15 +45,16 @@ class UDP_Client
 	char *recBuf;
 	struct sockaddr_in client;
 	unsigned char order; //zhen xuhao
-
+	bool connFlag;
 	
 	public:
 	string data_in;
 	string type;
 	
 	bool receFlag;
-	bool connFlag;
+	bool connect;
 
+	int len;
 	ros::Publisher pub_command;	
 };
 

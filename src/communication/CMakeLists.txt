@@ -50,7 +50,7 @@ find_package(catkin REQUIRED COMPONENTS
  add_message_files(
    FILES
    command.msg
-#   Message2.msg
+   state.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -134,9 +134,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(test_node src/test.cpp src/udpServer.cpp)
-add_executable(client_node src/toPLC.cpp src/test_plc.cpp)
-add_executable(fake_node  src/fakeProcess.cpp)
+add_executable(udp_node src/test.cpp src/udpServer.cpp)
+add_executable(plc_node src/toPLC.cpp src/test_plc.cpp)
+add_executable(fakeP_node  src/fakeProcess.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -149,14 +149,14 @@ add_executable(fake_node  src/fakeProcess.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(test_node
+ target_link_libraries(udp_node
    ${catkin_LIBRARIES}
 )
-  target_link_libraries(client_node
+  target_link_libraries(plc_node
    ${catkin_LIBRARIES}
 )
 
-	target_link_libraries(fake_node
+	target_link_libraries(fakeP_node
    ${catkin_LIBRARIES}
 )
 

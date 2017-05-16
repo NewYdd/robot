@@ -1,9 +1,9 @@
 #include <communication/udp_client.h>
-#define   ROBOT_ID   "!"
-#define   STATE   0x20
 
-//  crc for test 
+char PLC_ID=0x01;
 
+/*  crc for test  ,when use in normal ,delete the crc=0x10
+*/
 bool UDP_Client::open()
 {
  	if((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) 
@@ -30,6 +30,8 @@ void UDP_Client::init(int port,string ip,char *rec)
     	order=0x00;
     	connFlag=false;
     	receFlag=false;
+    	connect=false;
+    	
     	recBuf=rec;
 }
 
@@ -38,7 +40,7 @@ void UDP_Client::sendInfo(string type ,string data)
 	socklen_t addrlen;
 //	socklen_t addr_len = sizeof(struct sockaddr_in);		
 
-	string cmdToPlc;
+	string cmdToPlc="";
 	char *sendBuf;	
 
 	//tranform into the standard command to plc
@@ -47,10 +49,12 @@ void UDP_Client::sendInfo(string type ,string data)
 	string ID=ROBOT_ID; 
 */
  	unsigned char  lenth1;
-       unsigned char lenth2; 	
+       	unsigned char lenth2; 	
+
 	unsigned char head=0xFA;
 	if(order==255){order=0x00;}else order+=1;
-	string ID=ROBOT_ID;
+	 string ID="";
+	 ID+=PLC_ID;
     	 int temp=data.size()+1; //zhiling changdu
               if(temp>255)  
               {
@@ -63,9 +67,13 @@ void UDP_Client::sendInfo(string type ,string data)
               	lenth2=temp;
               }
 
-       cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
+
+
+       	cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
+		
 	cmdToPlc+=type;
 	cmdToPlc+=data;
+
 
 	unsigned char crc=getCrc(cmdToPlc);
 	unsigned tail=0xFF;
@@ -76,11 +84,10 @@ void UDP_Client::sendInfo(string type ,string data)
 	cmdToPlc+=tail;
 
 	sendBuf=(char *)cmdToPlc.c_str();
-	
 	int out_len=cmdToPlc.size();
-	cout<<"out_len "<<out_len<<endl;
+	
 
-	printf("send out %s\n",cmdToPlc.c_str());
+	//printf("send out %s\n",cmdToPlc.c_str());
 	sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&client, sizeof(client));
 	connFlag=false;
     	receFlag=false;
@@ -96,8 +103,7 @@ void UDP_Client::wait_back(int maxsize,int time)
 	{
 		timeout.tv_sec=time;
 		timeout.tv_usec=0;
-		cout<<endl;
-		printf("wait  message back\n");
+		
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
 		net=0;
@@ -110,16 +116,18 @@ void UDP_Client::wait_back(int maxsize,int time)
 		}
 		else if(net==0) 
 		{
-			printf("timeout\n");
-			connFlag=false;           // timeout means connect failed 
+			printf(" recevie timeout\n");
+			connFlag=false;       
+			connect=false;     // timeout means connect failed 
 			break;
 		}	
 		 else
 		 {	if(FD_ISSET(sockfd,&fds))
-				{
-					connFlag=true;
-					receive(maxsize);		
-				}
+			{
+				connFlag=true;
+				connect=true;
+				receive(maxsize);		
+			}
 		 }
 	
 	}
@@ -128,12 +136,12 @@ void UDP_Client::receive(int max)
 {
 	socklen_t addrlen;
 	addrlen=sizeof(client);	
-	
+	len=0;
 	int num=0;
 	bzero(recBuf, sizeof(recBuf));
 	num =recvfrom(sockfd,recBuf,max,0,(struct sockaddr*)&client,&addrlen); 
-	printf("Received a string from client %s, string is: %s\n", 
-				inet_ntoa(client.sin_addr), recBuf);
+	len=num;
+	printf("receive lenth %d\n",num);
 	char *p=recBuf;
 	string temp=recBuf;
 
@@ -157,6 +165,7 @@ void UDP_Client::receive(int max)
               	data_in+=*(p+i);
               }
 	}
+	
 	//if(crc_get==getCrc(crc_data))
 	if(crc_get==0x10)
 	{

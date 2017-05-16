@@ -1,11 +1,17 @@
 #include <ros/ros.h>
 #include <communication/udp_client.h>
 #include <communication/sendCmd.h>
+#include <communication/state.h>
 
 #define	UDP_TEST_PORT		8001
 #define UDP_SERVER_IP 		"192.168.60.169"
 #define MAXSIZE 1000
 #define TIME_WRONG 6//10s
+
+ char CONNECT_TYPE=0x00;
+ char CONNECT_DATA =0X01;
+ char STATE_TYPE = 0X20;
+ char STATE_DATA = 0X01;
 
 
 bool sendCallback(communication::sendCmd::Request  &req,
@@ -17,21 +23,73 @@ int main(int argc,char ** argv)
 	ros::init(argc,argv,"command_to_plc");
 	ros::NodeHandle nh;
 	ros::ServiceServer send_Cmd = nh.advertiseService("send_Cmd", sendCallback);
-	
+	ros::Publisher pub_state=nh.advertise<communication::state>("communication/state_plc",10);
+	communication::state msg;
+
 	char rec[MAXSIZE];
 	client.open();
 	client.init(UDP_TEST_PORT,UDP_SERVER_IP,rec);
-  	ROS_INFO("Ready to send_Cmd");
-  	ros::spin();
+	
+	int conn_time=0;
+	ros::Rate rate(1);
+	
+	string t;
+	string d;
+	while(ros::ok())
+  	{
+  		if(!client.connect) // 
+  		{
+  			printf("connect  command\n");
+  			t=CONNECT_TYPE;
+  			d=CONNECT_DATA;
+  			client.sendInfo(	t,d);
+			client.wait_back(MAXSIZE,3);
+
+			cout<<endl;
+
+			conn_time++;
+			if(conn_time>10)
+			{
+				msg.break_flag=true;
+				pub_state.publish(msg);
+				printf("communication failed\n");
+			}
+  		}
+  		else 
+  		{	
+  			printf("ask command\n");
+  			conn_time=0;
+			t=STATE_TYPE;
+  			d=STATE_DATA;
+  			client.sendInfo(t,d);
+			client.wait_back(MAXSIZE,TIME_WRONG);  // 6s zhong wu shuju ,ze chonglian
+  			
+			cout<<endl;
+
+  			msg.break_flag=false;
+  			msg.type=STATE_TYPE;
+  			msg.data=client.data_in;
+  			msg.lenth=client.len+1;//data lenth and type lenth
+
+  			pub_state.publish(msg);
+  		}
+    		ros::spinOnce();
+  		rate.sleep();
+  		
+  	}
 	return 0;
 }
 
 bool sendCallback(communication::sendCmd::Request  &req,
          communication::sendCmd::Response &res) 
 {
+	printf("other command\n");
             // send command and return somethin 
 	client.sendInfo(req.type,req.data);
 	client.wait_back(MAXSIZE,TIME_WRONG);
+
+	cout<<endl;
+
 	res.receive=client.receFlag;
 	res.state=client.data_in;
  	 return true;
