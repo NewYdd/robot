@@ -8,7 +8,7 @@
 #define MAXSIZE 			1000
 #define TIME_WRONG 			6//10s
 
- char PLC_ID=0x02; 
+ char MOVE_ID=0x01; 
  char CONNECT_TYPE=0x00;
  char CONNECT_DATA =0X01;
  char STATE_TYPE = 0X20;
@@ -21,16 +21,16 @@ bool sendCallback(communication::sendCmd::Request  &req,
 UDP_Client client;
 int main(int argc,char ** argv)
 {
-	ros::init(argc,argv,"command_to_plc");
+	ros::init(argc,argv,"command_to_move");
 	ros::NodeHandle nh;
-	ros::ServiceServer send_Cmd = nh.advertiseService("send_plc_cmd", sendCallback);
-	ros::Publisher pub_state=nh.advertise<communication::state>("communication/state_plc",10);
+	ros::ServiceServer send_Cmd = nh.advertiseService("send_move_cmd", sendCallback);
+	ros::Publisher pub_state=nh.advertise<communication::state>("communication/state_move",10);
 	communication::state msg;
 
 	char rec[MAXSIZE];
 	client.open();
 	string dev;
-	dev=PLC_ID;
+	dev=MOVE_ID;
 	client.init(UDP_TEST_PORT,UDP_SERVER_IP,rec,dev);
 	
 	int conn_time=0;
@@ -87,7 +87,7 @@ bool sendCallback(communication::sendCmd::Request  &req,
          communication::sendCmd::Response &res) 
 {
 	printf("other command\n");
-	printf("AAAAAAAAAAAAA\n");
+	printf("AAAAAAAAAAA\n");
             // send command and return somethin 
 	client.sendInfo(req.type,req.data);
 	client.wait_back(MAXSIZE,TIME_WRONG);

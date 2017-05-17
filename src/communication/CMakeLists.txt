@@ -136,6 +136,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(udp_node src/test.cpp src/udpServer.cpp)
 add_executable(plc_node src/toPLC.cpp src/test_plc.cpp)
+add_executable(move_node src/toPLC.cpp src/test_move.cpp)
+
 add_executable(fakeP_node  src/fakeProcess.cpp)
 
 ## Rename C++ executable without prefix
@@ -153,6 +155,10 @@ add_executable(fakeP_node  src/fakeProcess.cpp)
    ${catkin_LIBRARIES}
 )
   target_link_libraries(plc_node
+   ${catkin_LIBRARIES}
+)
+
+ target_link_libraries(move_node
    ${catkin_LIBRARIES}
 )
 

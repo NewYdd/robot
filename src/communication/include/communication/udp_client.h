@@ -29,7 +29,7 @@ class UDP_Client
 	/* initial the socket server;
 		parameter: PORT
 	*/
-	void init(int port,string ip,char *rec);
+	void init(int port,string ip,char *rec,string ID);
 	void sendInfo(string type ,string data);
 
 	void receive(int max);
@@ -46,7 +46,10 @@ class UDP_Client
 	struct sockaddr_in client;
 	unsigned char order; //zhen xuhao
 	bool connFlag;
-	
+	string dev_ID;
+
+
+
 	public:
 	string data_in;
 	string type;

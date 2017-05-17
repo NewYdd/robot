@@ -17,7 +17,7 @@ int main(int argc,char**argv)
 	char send[MAXSIZE];
 	char rec[MAXSIZE];
 	server.init(PORT,send,rec,nh);
-	ros::Rate rate(2);
+	
 	
 	while(ros::ok()&&!server.broken)
 	{
@@ -25,6 +25,7 @@ int main(int argc,char**argv)
 		server.wait_command(MAXSIZE,TIME_WRONG); //receive message , timeout break;
 		printf("wait  reconnect\n");
 		server.wait_reconnect(MAXSIZE,TIME_BROKEN);
+		
 	}	
 	printf("communication failed\n");
 	server.close_ser();

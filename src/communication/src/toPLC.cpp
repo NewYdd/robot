@@ -1,6 +1,6 @@
 #include <communication/udp_client.h>
 
-char PLC_ID=0x01;
+
 
 /*  crc for test  ,when use in normal ,delete the crc=0x10
 */
@@ -19,7 +19,7 @@ bool UDP_Client::open()
 	}
 }
 
-void UDP_Client::init(int port,string ip,char *rec)
+void UDP_Client::init(int port,string ip,char *rec,string ID)
 {
 	
    	bzero(&client,sizeof(client));  
@@ -31,7 +31,7 @@ void UDP_Client::init(int port,string ip,char *rec)
     	connFlag=false;
     	receFlag=false;
     	connect=false;
-    	
+    	dev_ID=ID;
     	recBuf=rec;
 }
 
@@ -53,8 +53,8 @@ void UDP_Client::sendInfo(string type ,string data)
 
 	unsigned char head=0xFA;
 	if(order==255){order=0x00;}else order+=1;
-	 string ID="";
-	 ID+=PLC_ID;
+	
+
     	 int temp=data.size()+1; //zhiling changdu
               if(temp>255)  
               {
@@ -69,7 +69,7 @@ void UDP_Client::sendInfo(string type ,string data)
 
 
 
-       	cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
+       	cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=dev_ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
 		
 	cmdToPlc+=type;
 	cmdToPlc+=data;

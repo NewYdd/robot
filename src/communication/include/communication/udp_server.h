@@ -18,6 +18,8 @@
 #include <ros/ros.h>
 #include <communication/command.h>
 #include <sys/select.h>
+
+#include <communication/state.h>
 using namespace std;
 
 class UDP_Server
@@ -39,6 +41,7 @@ class UDP_Server
 	void wait_command(int maxsize,int time);
 	void wait_connect(int maxsize,int time);
 	void wait_reconnect(int maxsize,int time);
+	void callback(const communication::state &msg);
 
 	private:
 	int sockfd;
