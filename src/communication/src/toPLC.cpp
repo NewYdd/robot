@@ -1,3 +1,12 @@
+/*通信模块:与PLC或运动卡通信
+  实现功能:1.接受主控的指令,生成指令发送给下位机(PLC或运动卡)
+		  2.接收下位机反馈指令,进行校验,并回复给上位机,通知上位机接受正确与否
+说明:receFlag:表示接受消息状态 
+	 connect:表示通信子模块连接状态	
+	 举例说明:若receFlat=false,则需要重新发送该指令. 一是超时,二是数据错误
+	 		  若connnect=false,则需要发送重连指令 
+*/
+
 #include <communication/udp_client.h>
 
 
@@ -19,22 +28,31 @@ bool UDP_Client::open()
 	}
 }
 
+/* 函数名:init
+ *入口参数:端口号,发送数组,接受数组,以及ros节点句柄,设备ID	
+ *功能:初始化服务端,绑定端口,初始化数组以及连接状态和数据状态
+*/   
 void UDP_Client::init(int port,string ip,char *rec,string ID)
 {
 	
-   	bzero(&client,sizeof(client));  
+   		bzero(&client,sizeof(client));  
     	client.sin_family=AF_INET;		
     	client.sin_port=htons(port);	
     	client.sin_addr.s_addr= inet_addr(ip.c_str());
     	//printf("%s\n",ip.c_str() );
     	order=0x00;
-    	connFlag=false;
+    	
     	receFlag=false;
     	connect=false;
     	dev_ID=ID;
     	recBuf=rec;
 }
 
+
+/* 函数名:sendInfo
+ *入口参数:指令类型,以及指令数据
+ *功能:生成指令发送给下位机
+*/ 
 void UDP_Client::sendInfo(string type ,string data)
 {
 	socklen_t addrlen;
@@ -49,27 +67,27 @@ void UDP_Client::sendInfo(string type ,string data)
 	string ID=ROBOT_ID; 
 */
  	unsigned char  lenth1;
-       	unsigned char lenth2; 	
+    unsigned char lenth2; 	
 
 	unsigned char head=0xFA;
 	if(order==255){order=0x00;}else order+=1;
 	
 
-    	 int temp=data.size()+1; //zhiling changdu
-              if(temp>255)  
-              {
-              	lenth1=temp-255;
-              	lenth2=255;
-              }
-              else 
-              {
-              	lenth1=0;
-              	lenth2=temp;
-              }
+    int temp=data.size()+1; //zhiling changdu
+    if(temp>255)  
+    {
+    	lenth1=temp-255;
+        lenth2=255;
+    }
+    else 
+    {
+        lenth1=0;
+        lenth2=temp;
+    }
 
 
 
-       	cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=dev_ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
+    cmdToPlc+=head;cmdToPlc+=order;cmdToPlc+=dev_ID;cmdToPlc+=lenth1;cmdToPlc+=lenth2;
 		
 	cmdToPlc+=type;
 	cmdToPlc+=data;
@@ -89,17 +107,22 @@ void UDP_Client::sendInfo(string type ,string data)
 
 	//printf("send out %s\n",cmdToPlc.c_str());
 	sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&client, sizeof(client));
-	connFlag=false;
-    	receFlag=false;
+	
+   	receFlag=false;
 }
 
+
+/* 函数名:wait_back
+ *入口参数:最大字节长度,通信时间
+ *功能:等待下位机回复
+*/ 
 void UDP_Client::wait_back(int maxsize,int time)
 {
 	fd_set fds;
 	timeval timeout={time,0};
 	int net;
 	
-	while(!connFlag)
+	while(!receFlag)
 	{
 		timeout.tv_sec=time;
 		timeout.tv_usec=0;
@@ -117,14 +140,13 @@ void UDP_Client::wait_back(int maxsize,int time)
 		else if(net==0) 
 		{
 			printf(" recevie timeout\n");
-			connFlag=false;       
+			receFlag=false;       
 			connect=false;     // timeout means connect failed 
 			break;
 		}	
 		 else
 		 {	if(FD_ISSET(sockfd,&fds))
 			{
-				connFlag=true;
 				connect=true;
 				receive(maxsize);		
 			}
@@ -132,6 +154,12 @@ void UDP_Client::wait_back(int maxsize,int time)
 	
 	}
 }
+
+
+/* 函数名:receive  接受数据
+ *入口参数:指令最大字节数
+ *功能: 接受数据
+*/ 
 void UDP_Client::receive(int max)
 {
 	socklen_t addrlen;

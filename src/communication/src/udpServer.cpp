@@ -1,7 +1,12 @@
+/*通信模块:与上位机通信
+  实现功能:1.接受上位机指令,进行校验回复正常接受与否.
+		  2.发布指令话题"communication/cmd"
+		  3.订阅状态信息,当上位机查询时,发送状态信息		  
+*/
 #include <communication/udp_server.h>
 
-#define  connect_cmd 0x00
-#define  ask_cmd      0x50  
+#define  connect_cmd 	0x00                                        //连接指令
+#define  ask_cmd      	0x50  								        //查询指令
 
 
 bool UDP_Server::open()
@@ -19,14 +24,18 @@ bool UDP_Server::open()
 	}
 }
 
+/* 函数名:init
+ *入口参数:端口号,发送数组,接受数组,以及ros节点句柄	
+ *功能:初始化服务端,绑定端口,初始化数组以及订阅器和发布器
+*/                                           
 void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 {
 	broken=false;	
    	connect=false;
    	bzero(&server,sizeof(server));  
-    	server.sin_family=AF_INET;		
-    	server.sin_port=htons(port);	
-    	server.sin_addr.s_addr= htonl (INADDR_ANY);
+    server.sin_family=AF_INET;		
+    server.sin_port=htons(port);	
+    server.sin_addr.s_addr= htonl (INADDR_ANY);
 	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
 	       perror("Bind()error.");
@@ -39,12 +48,20 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 	pub_command=n.advertise<communication::command>("communication/cmd",10);
 }
 
+/*函数名:callback
+ *功能:回调函数	
+*/
 void UDP_Server::callback(const communication::state &msg)
 {
 	data_out="";
 	data_out+=msg.data;
 	printf("update state\n");
 }
+
+/* 函数名:wait_connect  等待连接
+ *入口参数:指令最大字节数,以及通信等待时间.
+ *功能: 等待连接直至连接成功,成功发布连接成功消息
+*/   
 
 void UDP_Server::wait_connect(int maxsize,int time)
 {
@@ -95,6 +112,11 @@ void UDP_Server::wait_connect(int maxsize,int time)
 	
 }
 
+/* 函数名:wait_command  等待指令
+ *入口参数:指令最大字节数,以及通信等待时间.
+ *功能: 等待指令,等待时间内到来则正常回复,并发送命令消息
+ 		超时则终止,并发布通信中断
+*/ 
 void UDP_Server::wait_command(int maxsize,int time)
 {
 	fd_set fds;
@@ -147,6 +169,12 @@ void UDP_Server::wait_command(int maxsize,int time)
 		ros::spinOnce();
 	}
 }
+
+/* 函数名:wait_reconnect  等待重连
+ *入口参数:指令最大字节数,以及通信等待时间.
+ *功能: 等待指令,等待时间内到来则正常回复,并发送命令消息,表示重连成功
+ 		超时则终止,并发布通信故障
+*/ 
 void UDP_Server::wait_reconnect(int maxsize,int time)
 {
 	fd_set fds;
@@ -197,7 +225,10 @@ void UDP_Server::wait_reconnect(int maxsize,int time)
 	
 }
 
-
+/* 函数名:receive  接受数据
+ *入口参数:指令最大字节数
+ *功能: 接受数据
+*/ 
 void UDP_Server::receive(int max)
 {
 	socklen_t addrlen;
@@ -215,6 +246,12 @@ void UDP_Server::receive(int max)
 	
 }
 
+
+/* 函数名:process  数据处理
+ *功能: 处理数据,校验上位机数据.产生回复指令
+ 	    发送上位机指令给处理器
+ 	    若为连接指令.则connect=true;
+*/ 
 void UDP_Server::process()
 {
 
@@ -272,7 +309,7 @@ void UDP_Server::process()
 	{
 		
 		//check_out=getCrc(data);
-		check_in=0x0A;  // **if you want test  ,use this sentence
+		 check_in=0x0A;  // **if you want test  ,use this sentence
 		if(check==check_in)
 		{	
 			type="";
@@ -341,7 +378,7 @@ void UDP_Server::process()
 		check_out=getCrc(out);// default check_out 
 	}
 	
-	//check_out=0x0A;	
+   //check_out=0x0A;	
 	out+=check_out;
 	out+=tail;
  	   for(int i=0;i<12;i++)
@@ -351,8 +388,8 @@ void UDP_Server::process()
 		
 	}	
 
-    	cout<<out.c_str()<<endl;
-    	//cout<<"out   "<<out;
+    cout<<out.c_str()<<endl;
+
 	sendBuf=(char *)out.c_str();
 	
 	int out_len=out.size();
@@ -364,7 +401,9 @@ void UDP_Server::process()
 		sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&server, addrlen);
 	}
 }
-
+/*函数名:getCrc
+  功能:产生校验
+*/
 unsigned char UDP_Server::getCrc(string values)
 {
 	unsigned char crc_array[256] = {

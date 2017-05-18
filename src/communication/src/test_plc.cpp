@@ -1,3 +1,13 @@
+/*通信模块: 与plc通信节点
+ 节点名: command_to_plc
+ 订阅话题:无
+ 发布话题:communication/state_plc
+ 服务:send_move_plc
+ 功能:1.若未连接,则发送连接指令
+ 	  2.定时发布查询指令,并发布PLC状态消息
+ 	  3.接受主控服务调用,发送所要求的指令
+*/
+
 #include <ros/ros.h>
 #include <communication/udp_client.h>
 #include <communication/sendCmd.h>
@@ -76,7 +86,8 @@ int main(int argc,char ** argv)
 
   			pub_state.publish(msg);
   		}
-    		ros::spinOnce();
+    	
+    	ros::spinOnce();
   		rate.sleep();
   		
   	}

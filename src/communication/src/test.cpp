@@ -1,3 +1,12 @@
+/*通信模块: 与上位机通信节点
+ 节点名: command_to_client
+ 订阅话题:processor/state
+ 发布话题:communication/cmd
+ 服务:无		
+ 功能:启动节点,进入等待连接状态
+ 	  连接成功,进入等待命令状态,正常接受则循环,否则进行重连
+ 	  连接中断,进入等待重连状态,重连成功则进入等待命令状态,否则结束该节点,表明与上位机通信故张.
+*/
 #include <ros/ros.h>
 #include <communication/udp_server.h>
 #include <communication/command.h>
@@ -8,7 +17,7 @@
 
 int main(int argc,char**argv)
 {
-	ros::init(argc,argv,"Server");
+	ros::init(argc,argv,"command_to_client");
 	ros::NodeHandle nh;
 	ROS_INFO("start communication !");
 	

@@ -1,3 +1,8 @@
+/*模拟主控
+调用plc服务
+调用move服务
+提供状态信息
+*/
 #include "ros/ros.h"
 #include <communication/sendCmd.h>
 #include <communication/state.h>
