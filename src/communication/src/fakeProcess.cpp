@@ -7,7 +7,7 @@
 #include <communication/sendCmd.h>
 #include <communication/state.h>
 #include <cstdlib>
-
+using namespace std;
 int main(int argc, char **argv)
 {
       ros::init(argc, argv, "fake_processor");
@@ -22,8 +22,15 @@ int main(int argc, char **argv)
       communication::sendCmd srv;
       communication::state  msg;
 
-      srv.request.type= "C";
-      srv.request. data= "D";
+      char cmd_type=0x30;
+      string p="";
+      char temp=0x31;
+      p+=temp;
+      temp=0x00;
+      p+=temp;
+
+      srv.request.type+=cmd_type;
+      srv.request. data+=p;
 
       ros::Rate rate(2);
       if(strcmp(argv[1],"move")==0)

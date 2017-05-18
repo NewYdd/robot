@@ -8,7 +8,7 @@
 */
 
 #include <communication/udp_client.h>
-
+#include <communication/display.h>
 
 
 /*  crc for test  ,when use in normal ,delete the crc=0x10
@@ -35,7 +35,7 @@ bool UDP_Client::open()
 void UDP_Client::init(int port,string ip,char *rec,string ID)
 {
 	
-   		bzero(&client,sizeof(client));  
+   	bzero(&client,sizeof(client));  
     	client.sin_family=AF_INET;		
     	client.sin_port=htons(port);	
     	client.sin_addr.s_addr= inet_addr(ip.c_str());
@@ -67,23 +67,23 @@ void UDP_Client::sendInfo(string type ,string data)
 	string ID=ROBOT_ID; 
 */
  	unsigned char  lenth1;
-    unsigned char lenth2; 	
+  	unsigned char lenth2; 	
 
 	unsigned char head=0xFA;
 	if(order==255){order=0x00;}else order+=1;
 	
 
-    int temp=data.size()+1; //zhiling changdu
-    if(temp>255)  
-    {
-    	lenth1=temp-255;
-        lenth2=255;
-    }
-    else 
-    {
-        lenth1=0;
-        lenth2=temp;
-    }
+	    int temp=data.size()+1; //zhiling changdu
+	    if(temp>255)  
+	    {
+	    	lenth1=temp-255;
+	        	lenth2=255;
+	    }
+	    else 
+	    {
+	        lenth1=0;
+	        lenth2=temp;
+	    }
 
 
 
@@ -96,7 +96,7 @@ void UDP_Client::sendInfo(string type ,string data)
 	unsigned char crc=getCrc(cmdToPlc);
 	unsigned tail=0xFF;
 	//test
-	crc=0x10;
+	//crc=0x10;
 
 	cmdToPlc+=crc;
 	cmdToPlc+=tail;
@@ -104,7 +104,8 @@ void UDP_Client::sendInfo(string type ,string data)
 	sendBuf=(char *)cmdToPlc.c_str();
 	int out_len=cmdToPlc.size();
 	
-
+	cout<<"send messaage: ";
+	HexDump(sendBuf,out_len,0);
 	//printf("send out %s\n",cmdToPlc.c_str());
 	sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&client, sizeof(client));
 	
@@ -139,7 +140,7 @@ void UDP_Client::wait_back(int maxsize,int time)
 		}
 		else if(net==0) 
 		{
-			printf(" recevie timeout\n");
+			printf("recevie timeout\n");
 			receFlag=false;       
 			connect=false;     // timeout means connect failed 
 			break;
@@ -169,9 +170,12 @@ void UDP_Client::receive(int max)
 	bzero(recBuf, sizeof(recBuf));
 	num =recvfrom(sockfd,recBuf,max,0,(struct sockaddr*)&client,&addrlen); 
 	len=num;
-	printf("receive lenth %d\n",num);
+	
+	cout<<"rece messaage: ";
+	HexDump(recBuf,len,0);
+	
 	char *p=recBuf;
-	string temp=recBuf;
+	
 
 	//printf("back lenth%d\n",num );
 	string crc_data="";
@@ -181,24 +185,31 @@ void UDP_Client::receive(int max)
 	for (int i=0;i<num-1;i++)
 	{
 		if(i<num-2)
-             {	crc_data+=*(p+i);
-             }
-             else 
-              {
-              	crc_get=*(p+i);
-              }
+	            	 {	crc_data+=*(p+i);
+	             }
+	             else 
+	              {
+	       	       	crc_get=*(p+i);
+	              }
 
-              if(4<i<num-2)
-              {
-              	data_in+=*(p+i);
-              }
+	              if(5<i&&i<num-2)
+	              {
+	           	   	data_in+=*(p+i);
+	              }
 	}
 	
-	//if(crc_get==getCrc(crc_data))
-	if(crc_get==0x10)
+	if(crc_get==getCrc(crc_data))
+	//if(crc_get==0x10)
 	{
 		printf("data is right \n");
 		receFlag=true;
+		//******//
+		char *buf;
+		buf=(char *)data_in.c_str();
+		int out_len=data_in.size();
+		cout<<"message to processor : ";
+		HexDump(buf,out_len,0);
+		//****//
 	}
 	else receFlag=false;
 }

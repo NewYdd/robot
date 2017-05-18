@@ -4,6 +4,8 @@
 		  3.订阅状态信息,当上位机查询时,发送状态信息		  
 */
 #include <communication/udp_server.h>
+#include <communication/display.h>
+
 
 #define  connect_cmd 	0x00                                        //连接指令
 #define  ask_cmd      	0x50  								        //查询指令
@@ -74,7 +76,7 @@ void UDP_Server::wait_connect(int maxsize,int time)
 		timeout.tv_sec=time;
 		timeout.tv_usec=0;
 		cout<<endl;
-		printf("connecting\n");
+		printf("state : connecting\n");
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
 		net=0;
@@ -127,7 +129,7 @@ void UDP_Server::wait_command(int maxsize,int time)
 	while(1)
 	{
 		cout<<endl;
-		printf("connected\n");
+		printf("state : connected\n");
 	   	 timeout.tv_sec=time;
 		timeout.tv_usec=0;
 
@@ -186,7 +188,7 @@ void UDP_Server::wait_reconnect(int maxsize,int time)
 		cout<<endl;
 		timeout.tv_sec=time;
 	  	timeout.tv_usec=0;
-		printf("connecting\n");
+		printf("state : connecting\n");
 		FD_ZERO(&fds);
 		FD_SET(sockfd,&fds);
 		net=0;
@@ -238,6 +240,8 @@ void UDP_Server::receive(int max)
 	bzero(recBuf, sizeof(recBuf));
 	
 	num =recvfrom(sockfd,recBuf,max,0,(struct sockaddr*)&server,&addrlen); 
+  	cout<<"rece message :";
+  	HexDump(recBuf,num,0);
   	if(num>0)
   	{
 		process();
@@ -286,7 +290,7 @@ void UDP_Server::process()
 	{
 		data+=*p++;
 	}
-	printf("data %s\n",data.c_str() );
+	
 	unsigned char check=*p++;
 	unsigned char tail=*p;
 	
@@ -316,14 +320,13 @@ void UDP_Server::process()
 			data_in="";
 			// for processor
 			type+=t;
-			ROS_INFO("%s", type.c_str());
 			data_in=data;	
 			//data
 			if(t==ask_cmd)  // ask for state information
 			{
-				printf("ask\n");
-			    len_out[0]=0x00;
-			    len_out[1]=0x26;
+			   	printf("ask command\n");
+			   	 len_out[0]=0x00;
+			   	 len_out[1]=0x26;
 
 				out=out+len_out[0];
 				out=out+len_out[1];
@@ -345,7 +348,7 @@ void UDP_Server::process()
 			}
 			else 
 			{ 
-				printf("AAAAAAAA\n");
+				printf("other command\n");
 				out=out+len_out[0];
 				out=out+len_out[1];
 
@@ -381,23 +384,16 @@ void UDP_Server::process()
    //check_out=0x0A;	
 	out+=check_out;
 	out+=tail;
- 	   for(int i=0;i<12;i++)
-	{
-		a[i]=(int)out[i];
-		cout<<a[i]<<' ' ;
-		
-	}	
-
-    cout<<out.c_str()<<endl;
-
+ 	
 	sendBuf=(char *)out.c_str();
 	
 	int out_len=out.size();
-	cout<<"out_len "<<out_len<<endl;
+	
+	cout<<"send message :";
+  	HexDump(sendBuf,out_len,0);
 	
 	if(connect)
 	{
-		printf("sendback\n");
 		sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&server, addrlen);
 	}
 }
