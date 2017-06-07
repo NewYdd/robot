@@ -35,9 +35,9 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 	broken=false;	
    	connect=false;
    	bzero(&server,sizeof(server));  
-    server.sin_family=AF_INET;		
-    server.sin_port=htons(port);	
-    server.sin_addr.s_addr= htonl (INADDR_ANY);
+    	server.sin_family=AF_INET;		
+   	server.sin_port=htons(port);	
+    	server.sin_addr.s_addr= htonl (INADDR_ANY);
 	if(bind(sockfd, (struct sockaddr *)&server, sizeof(server)) == -1)
 	{
 	       perror("Bind()error.");
@@ -46,6 +46,7 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 	fcntl(sockfd,F_SETFL,O_NONBLOCK);
 	sendBuf=send;
 	recBuf=rec;
+	count=0;
 	sub_state=n.subscribe("processor/state",100,&UDP_Server::callback,this);
 	pub_command=n.advertise<communication::command>("communication/cmd",10);
 }
@@ -57,7 +58,7 @@ void UDP_Server::callback(const communication::state &msg)
 {
 	data_out="";
 	data_out+=msg.data;
-	printf("update state\n");
+	
 }
 
 /* 函数名:wait_connect  等待连接
@@ -232,7 +233,7 @@ void UDP_Server::wait_reconnect(int maxsize,int time)
  *功能: 接受数据
 */ 
 void UDP_Server::receive(int max)
-{
+{	count++;
 	socklen_t addrlen;
 	addrlen=sizeof(server);	
 	
@@ -240,7 +241,7 @@ void UDP_Server::receive(int max)
 	bzero(recBuf, sizeof(recBuf));
 	
 	num =recvfrom(sockfd,recBuf,max,0,(struct sockaddr*)&server,&addrlen); 
-  	cout<<"rece message :";
+  	cout<<"rece message "<<count<<": ";
   	HexDump(recBuf,num,0);
   	if(num>0)
   	{
@@ -272,6 +273,8 @@ void UDP_Server::process()
 	unsigned char order=*p++;
 	string ID="";
 	string data="";
+	string data_crc="";
+
 	ID+=*p++;ID+=*p++;ID+=*p++;ID+=*p++;
 
 	// lenth
@@ -300,7 +303,7 @@ void UDP_Server::process()
 	
 	//test 
 	//
-	int a[12]={0};
+
 
 	out+=head;
 	out+=order;
@@ -308,12 +311,21 @@ void UDP_Server::process()
 	string len_out;
 	len_out[0]=0x00;
 	len_out[1]=0x02;
-		
+	
+	data_crc+=head;data_crc+=order;data_crc+=ID;data_crc+=lenth[0];data_crc+=lenth[1];
+	data_crc+=t;data_crc+=data;
+
+	/*char *buf;
+	buf=(char *)data_crc.c_str();
+	int out_l=data_crc.size();
+	cout<<"send message :";
+  	HexDump(buf,out_l,0);
+*/
 	if(tail==0xFF)
 	{
 		
-		//check_out=getCrc(data);
-		 check_in=0x0A;  // **if you want test  ,use this sentence
+		//check_in=getCrc(data_crc);
+		check_in=0x0A;  // **if you want test  ,use this sentence
 		if(check==check_in)
 		{	
 			type="";
@@ -321,12 +333,23 @@ void UDP_Server::process()
 			// for processor
 			type+=t;
 			data_in=data;	
+			char *buf1;
+			buf1=(char *)type.c_str();
+			int out_2=type.size();
+			cout<<"type :";
+  			HexDump(buf1,out_2,0);
+
+			char *buf;
+			buf=(char *)data_in.c_str();
+		             int out_l=data_in.size();
+	                          cout<<"data :";
+  	                          HexDump(buf,out_l,0);
 			//data
 			if(t==ask_cmd)  // ask for state information
 			{
 			   	printf("ask command\n");
 			   	 len_out[0]=0x00;
-			   	 len_out[1]=0x26;
+			   	 len_out[1]=data_out.size()+1;
 
 				out=out+len_out[0];
 				out=out+len_out[1];

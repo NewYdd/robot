@@ -48,7 +48,7 @@ class UDP_Server
 	char *sendBuf;	
 	char *recBuf;
 	struct sockaddr_in server;
-
+	int count;
 
 	
 	public:

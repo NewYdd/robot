@@ -14,8 +14,8 @@
 #include <communication/sendCmd.h>
 #include <communication/state.h>
 
-#define	UDP_TEST_PORT		8001
-#define UDP_SERVER_IP 		"192.168.60.169"
+#define	UDP_TEST_PORT		1030
+#define UDP_SERVER_IP 		"192.168.1.252"// this should be changed
 #define MAXSIZE 			1000
 #define TIME_WRONG 			6//10s
 

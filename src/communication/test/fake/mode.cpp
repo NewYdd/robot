@@ -79,10 +79,10 @@ int main(int argC, char* arg[])
 	
 	move[0]=0xFA;move[1]=0x00;
 	move[2]=0x21;move[3]=0x21;move[4]=0x21;move[5]=0x21;
-             move[6]=0x00;move[7]=0x03;
-	move[8]=0x30;move[9]=0x31;  move[10]=0x01; //abcd
-	move[11]=0x0A;
-	move[12]=0xFF;
+             move[6]=0x00;move[7]=0x02;
+	move[8]=0x70;move[9]=0x01;  
+	move[10]=0x0A;
+	move[11]=0xFF;
 
 
 	int i=0;
@@ -101,26 +101,15 @@ int main(int argC, char* arg[])
 	
 		else 
 		{
-			len=13;
-			if(i%4==0)
-			{
-				move[9]=0x31;  move[10]=0x02; 
-			}
-			else if(i%4==1)
-			{
-				move[9]=0x31;  move[10]=0x01; 
-			}
+			len=12;
 			
-			else if(i%4==2)
-			{
-				move[9]=0x31;  move[10]=0x04; 
-			}
 			
-			else if(i%4==3)
+			if(i%3==0)
 			{
-				move[9]=0x31;  move[10]=0x08; 
+				move[9]=0x00;  
 			}
-			
+			else 
+				move[9]=0x01;
 			sendto(sockfd, move, len, 0, (struct sockaddr *)&addr, addr_len);
 			char *a;
 			a=move;

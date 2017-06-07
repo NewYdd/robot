@@ -79,11 +79,29 @@ int main(int argC, char* arg[])
 	
 	move[0]=0xFA;move[1]=0x00;
 	move[2]=0x21;move[3]=0x21;move[4]=0x21;move[5]=0x21;
-             move[6]=0x00;move[7]=0x03;
-	move[8]=0x30;move[9]=0x31;  move[10]=0x01; //abcd
-	move[11]=0x0A;
-	move[12]=0xFF;
+             move[6]=0x00;move[7]=0x35;
+	move[8]=0x20;
+	move[9]=0x21;  
+	move[10]=0x23; move[11]=0x01; move[12]=0x01; move[13]=0x01; move[14]=0x01; 
+	move[15]=0x01; move[16]=0x01; move[17]=0x01; move[18]=0x01; 
+	move[19]=0x24;move[20]=0x01;move[21]=0x01;
+	move[22]=0x25;move[23]=0x01;move[24]=0x01;
+	move[25]=0x26;move[26]=0x01;move[27]=0x01;
+	move[28]=0x27;move[29]=0x01;
+	move[30]=0x28;move[31]=0x01;move[32]=0x01;
+	move[33]=0x29;move[34]=0x01;
 
+	move[35]=0x22;  
+	move[36]=0x23; move[37]=0x01; move[38]=0x01; move[39]=0x01; move[40]=0x01; 
+	move[41]=0x01; move[42]=0x01; move[43]=0x01; move[44]=0x01; 
+	move[45]=0x24;move[46]=0x01;move[47]=0x01;
+	move[48]=0x25;move[49]=0x01;move[50]=0x01;
+	move[51]=0x26;move[52]=0x01;move[53]=0x01;
+	move[54]=0x27;move[55]=0x01;
+	move[56]=0x28;move[57]=0x01;move[58]=0x01;
+	move[59]=0x29;move[60]=0x01;
+
+	move[61]=0x0A;move[62]=0xFF;
 
 	int i=0;
 	while(1) {
@@ -101,25 +119,7 @@ int main(int argC, char* arg[])
 	
 		else 
 		{
-			len=13;
-			if(i%4==0)
-			{
-				move[9]=0x31;  move[10]=0x02; 
-			}
-			else if(i%4==1)
-			{
-				move[9]=0x31;  move[10]=0x01; 
-			}
-			
-			else if(i%4==2)
-			{
-				move[9]=0x31;  move[10]=0x04; 
-			}
-			
-			else if(i%4==3)
-			{
-				move[9]=0x31;  move[10]=0x08; 
-			}
+			len=63;
 			
 			sendto(sockfd, move, len, 0, (struct sockaddr *)&addr, addr_len);
 			char *a;

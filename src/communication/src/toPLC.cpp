@@ -199,7 +199,7 @@ void UDP_Client::receive(int max)
 	}
 	
 	if(crc_get==getCrc(crc_data))
-	//if(crc_get==0x10)
+	//if(crc_get==0xA0)
 	{
 		printf("data is right \n");
 		receFlag=true;
