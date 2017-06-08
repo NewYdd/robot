@@ -25,15 +25,15 @@ int main(int argc,char**argv)
 	server.open();	
 	char send[MAXSIZE];
 	char rec[MAXSIZE];
-	server.init(PORT,send,rec,nh);
+	server.init(PORT,send,rec,nh,TIME_WRONG,TIME_BROKEN);
 	
 	
 	while(ros::ok()&&!server.broken)
 	{
 		server.wait_connect(MAXSIZE,1000);
-		server.wait_command(MAXSIZE,TIME_WRONG); //receive message , timeout break;
+		server.wait_command(MAXSIZE); //receive message , timeout break;
 		printf("wait  reconnect\n");
-		server.wait_reconnect(MAXSIZE,TIME_BROKEN);
+		server.wait_reconnect(MAXSIZE);
 		
 	}	
 	printf("communication failed\n");

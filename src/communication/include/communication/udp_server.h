@@ -31,16 +31,17 @@ class UDP_Server
 	/* initial the socket server;
 		parameter: PORT
 	*/
-	void init(int port,char *send,char *rec,ros::NodeHandle &n);
+	void init(int port,char *send,char *rec,ros::NodeHandle &n,
+		int wrong_time,int broken_time);
 	void process();
 	void receive(int max);
 
 	void close_ser();
 	void callback();
 	unsigned char getCrc(string values);
-	void wait_command(int maxsize,int time);
+	void wait_command(int maxsize);
 	void wait_connect(int maxsize,int time);
-	void wait_reconnect(int maxsize,int time);
+	void wait_reconnect(int maxsize);
 	void callback(const communication::state &msg);
 
 	private:
@@ -62,6 +63,8 @@ class UDP_Server
 	ros::Publisher pub_command;
 	bool connect;
 	bool broken;
+	int  time_wrong;
+	int time_broken;
 	
 };
 

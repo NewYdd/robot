@@ -7,8 +7,9 @@
 #include <communication/display.h>
 
 
-#define  connect_cmd 	0x00                                        //连接指令
-#define  ask_cmd      	0x50  								        //查询指令
+#define  CONNECT_CMD 	0x00                                        //连接指令
+#define  ASK_CMD      		0x50  	                                    //查询指令
+#define  SET_CMD		0x10			          //peizhi指令		     
 
 
 bool UDP_Server::open()
@@ -30,7 +31,8 @@ bool UDP_Server::open()
  *入口参数:端口号,发送数组,接受数组,以及ros节点句柄	
  *功能:初始化服务端,绑定端口,初始化数组以及订阅器和发布器
 */                                           
-void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
+void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n,
+	int wrong_time,int broken_time)
 {
 	broken=false;	
    	connect=false;
@@ -49,6 +51,8 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n)
 	count=0;
 	sub_state=n.subscribe("processor/state",100,&UDP_Server::callback,this);
 	pub_command=n.advertise<communication::command>("communication/cmd",10);
+	time_broken=broken_time;
+	time_wrong =wrong_time;
 }
 
 /*函数名:callback
@@ -120,10 +124,10 @@ void UDP_Server::wait_connect(int maxsize,int time)
  *功能: 等待指令,等待时间内到来则正常回复,并发送命令消息
  		超时则终止,并发布通信中断
 */ 
-void UDP_Server::wait_command(int maxsize,int time)
+void UDP_Server::wait_command(int maxsize)
 {
 	fd_set fds;
-	timeval timeout={time,0};
+	timeval timeout={time_wrong,0};
 	int net;
 	connect=true;
 	
@@ -131,7 +135,7 @@ void UDP_Server::wait_command(int maxsize,int time)
 	{
 		cout<<endl;
 		printf("state : connected\n");
-	   	 timeout.tv_sec=time;
+	   	 timeout.tv_sec=time_wrong;
 		timeout.tv_usec=0;
 
 		FD_ZERO(&fds);
@@ -145,7 +149,7 @@ void UDP_Server::wait_command(int maxsize,int time)
 		}
 		else if(net==0) 
 		{
-			printf("timeout\n");
+			printf("%ds  timeout\n",time_wrong);
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=false;
 			pub_command.publish(pub_msg);
@@ -178,16 +182,16 @@ void UDP_Server::wait_command(int maxsize,int time)
  *功能: 等待指令,等待时间内到来则正常回复,并发送命令消息,表示重连成功
  		超时则终止,并发布通信故障
 */ 
-void UDP_Server::wait_reconnect(int maxsize,int time)
+void UDP_Server::wait_reconnect(int maxsize)
 {
 	fd_set fds;
-	timeval timeout={time,0};
+	timeval timeout={time_broken,0};
 	int net;
 	
 	while(!connect)
 	{
 		cout<<endl;
-		timeout.tv_sec=time;
+		timeout.tv_sec=time_broken;
 	  	timeout.tv_usec=0;
 		printf("state : connecting\n");
 		FD_ZERO(&fds);
@@ -201,7 +205,7 @@ void UDP_Server::wait_reconnect(int maxsize,int time)
 		}
 		else if(net==0) 
 		{
-			printf("timeout\n");
+			printf("%ds  timeout\n",time_broken);
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=true;
 			pub_command.publish(pub_msg);
@@ -345,7 +349,7 @@ void UDP_Server::process()
 	                          cout<<"data :";
   	                          HexDump(buf,out_l,0);
 			//data
-			if(t==ask_cmd)  // ask for state information
+			if(t==ASK_CMD)  // ask for state information
 			{
 			   	printf("ask command\n");
 			   	 len_out[0]=0x00;
@@ -359,7 +363,7 @@ void UDP_Server::process()
 				out+=data_out;
 				check_out=getCrc(out);// update crc		
 			}
-			else if(t==connect_cmd)
+			else if(t==CONNECT_CMD)
 			{
 				printf("connect command\n");
 				out=out+len_out[0];
@@ -368,6 +372,20 @@ void UDP_Server::process()
 				out+=rec;
 				check_out=getCrc(out);
 				connect=true;
+			}
+			else if(t==SET_CMD)
+			{
+				printf("set command\n");
+				out=out+len_out[0];
+				out=out+len_out[1];
+
+				out+=t;
+				out+=rec;
+				check_out=getCrc(out);
+				time_wrong=data[5];
+				time_broken=data[7];
+				//printf("wrong : %d, broken : %d \n",time_wrong,time_broken );
+
 			}
 			else 
 			{ 
@@ -378,8 +396,10 @@ void UDP_Server::process()
 				out+=t;
 				out+=rec;
 				check_out=getCrc(out);
-				
-			}// update crc
+
+				//get the time
+
+			}
 		}
 		else// check failed ,return receive error
 		{	
