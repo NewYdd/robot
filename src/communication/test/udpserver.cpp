@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define	UDP_TEST_PORT		8001
+#define	UDP_TEST_PORT		8002
 
 int main(int argC, char* arg[])
 {

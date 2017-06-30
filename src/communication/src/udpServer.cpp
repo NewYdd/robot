@@ -8,8 +8,8 @@
 
 
 #define  CONNECT_CMD 	0x00                                        //连接指令
-#define  ASK_CMD      		0x50  	                                    //查询指令
-#define  SET_CMD		0x10			          //peizhi指令		     
+#define  ASK_CMD      	0x50  	                                   //查询指令
+#define  SET_CMD		0x10			                           //peizhi指令		     
 
 
 bool UDP_Server::open()
@@ -34,7 +34,7 @@ bool UDP_Server::open()
 void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n,
 	int wrong_time,int broken_time)
 {
-	broken=false;	
+	broken=false;	                        //连接标志以及故障标志均为否
    	connect=false;
    	bzero(&server,sizeof(server));  
     	server.sin_family=AF_INET;		
@@ -49,8 +49,10 @@ void UDP_Server::init(int port,char *send,char *rec,ros::NodeHandle &n,
 	sendBuf=send;
 	recBuf=rec;
 	count=0;
+	
 	sub_state=n.subscribe("processor/state",100,&UDP_Server::callback,this);
 	pub_command=n.advertise<communication::command>("communication/cmd",10);
+	
 	time_broken=broken_time;
 	time_wrong =wrong_time;
 }
@@ -76,7 +78,7 @@ void UDP_Server::wait_connect(int maxsize,int time)
 	timeval timeout={time,0};
 	int net;
 	
-	while(!connect)
+	while(!connect)                         //只有未连接才会接受指令
 	{
 		timeout.tv_sec=time;
 		timeout.tv_usec=0;
@@ -97,7 +99,7 @@ void UDP_Server::wait_connect(int maxsize,int time)
 
 		}
 				
-		 else
+		 else                                   //数据大于0则进入receive进行接受与处理.发布消息 建立连接
 		 {	if(FD_ISSET(sockfd,&fds))
 				{
 					receive(maxsize);
@@ -107,8 +109,8 @@ void UDP_Server::wait_connect(int maxsize,int time)
 						pub_msg.type=type;
 						pub_msg.command_lenth=cmd_lenth;
 						pub_msg.data=data_in;
-						pub_msg.break_flag=false;
-						pub_msg.wrong_flag=!connect;
+						pub_msg.break_flag=false;       //通信故障及错误标志均为否
+						pub_msg.wrong_flag=!connect;    //
 						pub_command.publish(pub_msg);
 					}
 				}
@@ -135,7 +137,7 @@ void UDP_Server::wait_command(int maxsize)
 	{
 		cout<<endl;
 		printf("state : connected\n");
-	   	 timeout.tv_sec=time_wrong;
+	   	timeout.tv_sec=time_wrong;
 		timeout.tv_usec=0;
 
 		FD_ZERO(&fds);
@@ -149,7 +151,7 @@ void UDP_Server::wait_command(int maxsize)
 		}
 		else if(net==0) 
 		{
-			printf("%ds  timeout\n",time_wrong);
+			printf("%ds  timeout\n",time_wrong);       //通信超时,错误标志为真,故障标志为否
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=false;
 			pub_command.publish(pub_msg);
@@ -157,14 +159,14 @@ void UDP_Server::wait_command(int maxsize)
 			break;
 		}
 				
-		 else
+		 else                        //数据大于0则进入receive进行接受与处理.发布消息 数据信息
 		 {	if(FD_ISSET(sockfd,&fds))
 				{
 					receive(maxsize);
 					pub_msg.type=type;
 					pub_msg.command_lenth=cmd_lenth;
 					pub_msg.data=data_in;
-					pub_msg.break_flag=false;
+					pub_msg.break_flag=false;           //通信正常,标志均为否
 					pub_msg.wrong_flag=false;
 					
 					pub_command.publish(pub_msg);
@@ -188,7 +190,7 @@ void UDP_Server::wait_reconnect(int maxsize)
 	timeval timeout={time_broken,0};
 	int net;
 	
-	while(!connect)
+	while(!connect)                           //只有未连接才会接受指令,一旦连接上则跳出等待重连
 	{
 		cout<<endl;
 		timeout.tv_sec=time_broken;
@@ -205,7 +207,7 @@ void UDP_Server::wait_reconnect(int maxsize)
 		}
 		else if(net==0) 
 		{
-			printf("%ds  timeout\n",time_broken);
+			printf("%ds  timeout\n",time_broken); //重连通信超时 ,故障及错误标志为真
 			pub_msg.wrong_flag=true;
 			pub_msg.break_flag=true;
 			pub_command.publish(pub_msg);
@@ -218,8 +220,8 @@ void UDP_Server::wait_reconnect(int maxsize)
 				{
 					receive(maxsize);
 					pub_msg.type=type;
-					pub_msg.command_lenth=cmd_lenth;
-					pub_msg.data=data_in;
+					pub_msg.command_lenth=cmd_lenth;  //重连通信正常,故障标志为否, 若接受到连接指令,
+					pub_msg.data=data_in;	 //则connect为真,相应通信标志为否.其他指令,仍未连接上		
 					pub_msg.break_flag=false;
 					pub_msg.wrong_flag=!connect;
 					pub_command.publish(pub_msg);
@@ -271,7 +273,7 @@ void UDP_Server::process()
 	addrlen=sizeof(server);	
 	
 	char *p=recBuf;
-	string out="";
+	string out="";   				//out字符串为回复给上位机指令
 	
 	unsigned char head=*p++;
 	unsigned char order=*p++;
@@ -298,17 +300,13 @@ void UDP_Server::process()
 		data+=*p++;
 	}
 	
-	unsigned char check=*p++;
+	unsigned char check=*p++;  //上位机指令中的检验值
 	unsigned char tail=*p;
 	
-	unsigned char check_out;//crc
-	unsigned char check_in;//crc
-	unsigned char rec=0x01; //receive normal   as data
+	unsigned char check_out;//crc  回复给上位机指令的校验值
+	unsigned char check_in;//crc   对上位机数据进行校验 
+	unsigned char rec=0x01; //receive normal   as data 正常接受
 	
-	//test 
-	//
-
-
 	out+=head;
 	out+=order;
 	out+=ID;
@@ -325,18 +323,20 @@ void UDP_Server::process()
 	cout<<"send message :";
   	HexDump(buf,out_l,0);
 */
-	if(tail==0xFF)
+	if(tail==0xFF)               //数据接收完整
 	{
 		
 		//check_in=getCrc(data_crc);
 		check_in=0x0A;  // **if you want test  ,use this sentence
-		if(check==check_in)
+		if(check==check_in)            //校验位正确
 		{	
 			type="";
 			data_in="";
 			// for processor
 			type+=t;
 			data_in=data;	
+			
+			//显示给处理其数据
 			char *buf1;
 			buf1=(char *)type.c_str();
 			int out_2=type.size();
@@ -345,11 +345,13 @@ void UDP_Server::process()
 
 			char *buf;
 			buf=(char *)data_in.c_str();
-		             int out_l=data_in.size();
-	                          cout<<"data :";
-  	                          HexDump(buf,out_l,0);
+		    int out_l=data_in.size();
+	        cout<<"data :";
+  	        HexDump(buf,out_l,0);
+  	        unsigned char dd=type[0];
+			
 			//data
-			if(t==ASK_CMD)  // ask for state information
+			if(t==ASK_CMD)  // ask for state information 查询指令
 			{
 			   	printf("ask command\n");
 			   	 len_out[0]=0x00;
@@ -359,11 +361,11 @@ void UDP_Server::process()
 				out=out+len_out[1];
 
 				out+=t;
-				out+=rec;
+				out+=rec;                  //正常接收+状态信息
 				out+=data_out;
 				check_out=getCrc(out);// update crc		
 			}
-			else if(t==CONNECT_CMD)
+			else if(t==CONNECT_CMD)               //连接指令
 			{
 				printf("connect command\n");
 				out=out+len_out[0];
@@ -382,10 +384,16 @@ void UDP_Server::process()
 				out+=t;
 				out+=rec;
 				check_out=getCrc(out);
-				time_wrong=data[5];
+				
+				time_wrong=data[5];          //故障以及错误时间设置
 				time_broken=data[7];
 				//printf("wrong : %d, broken : %d \n",time_wrong,time_broken );
 
+			}
+			
+			else if(dd==0x90)
+			{
+				printf("suceesssss\n");
 			}
 			else 
 			{ 
@@ -424,7 +432,7 @@ void UDP_Server::process()
 		check_out=getCrc(out);// default check_out 
 	}
 	
-   //check_out=0x0A;	
+   //校验位以及帧尾
 	out+=check_out;
 	out+=tail;
  	

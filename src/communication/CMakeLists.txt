@@ -137,6 +137,7 @@ include_directories(
 add_executable(udp_node src/test.cpp src/udpServer.cpp)
 add_executable(plc_node src/toPLC.cpp src/test_plc.cpp)
 add_executable(move_node src/toPLC.cpp src/test_move.cpp)
+add_executable(lift_node src/serialPort.cpp src/test_lifter.cpp)
 
 add_executable(fakeP_node  src/fakeProcess.cpp)
 
@@ -159,6 +160,10 @@ add_executable(fakeP_node  src/fakeProcess.cpp)
 )
 
  target_link_libraries(move_node
+   ${catkin_LIBRARIES}
+)
+
+ target_link_libraries(lift_node
    ${catkin_LIBRARIES}
 )
 

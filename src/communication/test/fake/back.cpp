@@ -13,7 +13,7 @@
 
 
 #define	UDP_TEST_PORT		8001
-#define UDP_SERVER_IP 		"192.168.60.169"
+#define UDP_SERVER_IP 		"192.168.60.175"
 
 using namespace std;
 

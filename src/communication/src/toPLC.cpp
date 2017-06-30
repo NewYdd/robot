@@ -42,8 +42,9 @@ void UDP_Client::init(int port,string ip,char *rec,string ID)
     	//printf("%s\n",ip.c_str() );
     	order=0x00;
     	
-    	receFlag=false;
-    	connect=false;
+    	receFlag=false;                //接收数据标志
+    	connect=false;                 //连接标志
+    	
     	dev_ID=ID;
     	recBuf=rec;
 }
@@ -56,7 +57,6 @@ void UDP_Client::init(int port,string ip,char *rec,string ID)
 void UDP_Client::sendInfo(string type ,string data)
 {
 	socklen_t addrlen;
-//	socklen_t addr_len = sizeof(struct sockaddr_in);		
 
 	string cmdToPlc="";
 	char *sendBuf;	
@@ -67,17 +67,17 @@ void UDP_Client::sendInfo(string type ,string data)
 	string ID=ROBOT_ID; 
 */
  	unsigned char  lenth1;
-  	unsigned char lenth2; 	
+  	unsigned char  lenth2; 	
 
 	unsigned char head=0xFA;
 	if(order==255){order=0x00;}else order+=1;
 	
 
-	    int temp=data.size()+1; //zhiling changdu
+	    int temp=data.size()+1; //指令长度
 	    if(temp>255)  
 	    {
 	    	lenth1=temp-255;
-	        	lenth2=255;
+	        lenth2=255;
 	    }
 	    else 
 	    {
@@ -109,7 +109,7 @@ void UDP_Client::sendInfo(string type ,string data)
 	//printf("send out %s\n",cmdToPlc.c_str());
 	sendto(sockfd,sendBuf, out_len, 0, (struct sockaddr *)&client, sizeof(client));
 	
-   	receFlag=false;
+   	receFlag=false;  //接收数据标志否:未接收到数据
 }
 
 
@@ -123,7 +123,7 @@ void UDP_Client::wait_back(int maxsize,int time)
 	timeval timeout={time,0};
 	int net;
 	
-	while(!receFlag)
+	while(!receFlag)          
 	{
 		timeout.tv_sec=time;
 		timeout.tv_usec=0;
@@ -146,9 +146,9 @@ void UDP_Client::wait_back(int maxsize,int time)
 			break;
 		}	
 		 else
-		 {	if(FD_ISSET(sockfd,&fds))
+		 {	if(FD_ISSET(sockfd,&fds))   // 如果有数据,则接受.连接标志为真
 			{
-				connect=true;
+				connect=true;       
 				receive(maxsize);		
 			}
 		 }
@@ -185,17 +185,17 @@ void UDP_Client::receive(int max)
 	for (int i=0;i<num-1;i++)
 	{
 		if(i<num-2)
-	            	 {	crc_data+=*(p+i);
-	             }
-	             else 
-	              {
-	       	       	crc_get=*(p+i);
-	              }
+	    	{	crc_data+=*(p+i); //校验数据
+	    	}
+	    	else 
+	   		{
+	      		crc_get=*(p+i);
+	        }
 
-	              if(5<i&&i<num-2)
-	              {
-	           	   	data_in+=*(p+i);
-	              }
+	    	if(5<i&&i<num-2)
+	    	{
+	         		data_in+=*(p+i);  //给处理器数据
+	    	}
 	}
 	
 	if(crc_get==getCrc(crc_data))
@@ -211,7 +211,7 @@ void UDP_Client::receive(int max)
 		HexDump(buf,out_len,0);
 		//****//
 	}
-	else receFlag=false;
+	else receFlag=false;  //数据接收错误
 }
 
 
