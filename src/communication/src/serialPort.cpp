@@ -1,4 +1,4 @@
-#include <communication/serialPort.h>
+#include "communication/serialPort.h"
 
 SerialPort::SerialPort(const char* portName)
 {
@@ -130,14 +130,21 @@ int SerialPort::setPort(int baud,int databits,int stopbits,char parity)
 	//原始输出方式可以通过在c_oflag中重置OPOST选项来选择：
 	options.c_oflag &= ~OPOST;		//output immediately without buff
 	//UNIX串口驱动提供了设置字符和包超时的能力.数组c_cc中有两个元素可以用来设置超时:VMIN和VTIME.
-	options.c_cc[VTIME]=50;		//mostly wait 5s for reading in block mode
-	options.c_cc[VMIN]=0;
+	//options.c_cc[VTIME]=1;		//mostly wait 5s for reading in block mode
+	//options.c_cc[VMIN]=9;
+
+	options.c_cc[VTIME]=1;
+	options.c_cc[VMIN]=9;
 	//TCSANOW	Make changes now without waiting for data to complete
+	 tcflush(fd, TCIFLUSH);
+
+  	 tcsetattr(fd, TCSANOW, &options);
 	if(tcsetattr(fd,TCSANOW,&options)!=0)
 	{
 		perror("can't set new options\n");
 		return(-1);
 	}
+	else{printf("success\n");}
 	return(0);
 }
 
@@ -158,28 +165,41 @@ void SerialPort::setBlock(bool on)
 	}
 }
 
-unsigned int SerialPort::crc16_modbus(unsigned char *p, int len)
+int SerialPort::Receive ( char *data, int datalen, int timeout )
 {
-	char i;
-	int j;
-	unsigned int crc=0xffff;
-	
-	for(j=0;j<len;j++)
-	{
-		crc^=(*p);
-		p++;
-		for(i=8;i!=0;i--)
+	int readlen=0, fs_sel;
+	fd_set fs_read;
+	struct timeval tv_timeout;
+
+	if ( fd == -1 ) //串口未被打开
+	return -1;
+
+	FD_ZERO(&fs_read);
+	FD_SET(fd, &fs_read);
+	int count=0;
+	do{
+		if ( timeout > 0 )
 		{
-			if(crc&1)
-			{
-				crc>>=1;
-				crc^=0xa001;
-			}
-			else
-			{
-				crc>>=1;
-			}
+			tv_timeout.tv_sec = timeout; //time out : unit sec 
+			tv_timeout.tv_usec = 0;
+
+			fs_sel = select( fd+1, &fs_read, NULL, NULL, &tv_timeout);
 		}
-	}
-	return crc;
+		else//死等
+		{
+			fs_sel = select( fd+1, &fs_read, NULL, NULL, NULL );
+		}
+		if(fs_sel)
+		{
+			//printf("read the dev\n");
+			readlen = read(fd, data, datalen);
+			printf("read line %d\n",readlen);
+			count+=readlen;
+		}
+		else
+		{
+			return(-1);
+		}
+	}while(count<=9);
+return count;
 }

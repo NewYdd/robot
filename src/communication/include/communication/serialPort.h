@@ -39,13 +39,13 @@ public:
 	//return 0(success) or -1(error)
 	//
 	int setPort(int baud,int databits,int stopbits,char parity);
-
+	int Receive (char *data, int datalen, int timeout = -1 );
 	//
 	//@*p:pointer of uchar array to be checked
 	//@len:lenth of array to be checked
 	//return check num
 	//
-	unsigned int crc16_modbus(unsigned char *p, int len);
+	//uint crc16_modbus(uchar *p, int len);
 	
 	//
 	//@on: 1/true:block mode
