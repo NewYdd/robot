@@ -51,6 +51,7 @@ find_package(catkin REQUIRED COMPONENTS
    FILES
    command.msg
    state.msg
+   height.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -149,7 +150,7 @@ add_executable(fakeP_node  src/fakeProcess.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_dependencies(lift_node communication_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(udp_node

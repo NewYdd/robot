@@ -1,7 +1,6 @@
 #ifndef DISPALY_H
 #define DISPALY_H
 
-#include <stdio.h>
 
 
 void HexDump(char *buf,int len,int addr) {
